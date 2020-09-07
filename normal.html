@@ -1,0 +1,138 @@
+<!DOCTYPE html><html><head><style>#c{background:black;margin:auto;display:block;}</style></head><body><canvas id="c" width="480px" height="640px"></canvas></body><script>
+const w = 480,
+	h = 640;
+var canvas = document.getElementById("c"),
+	c = canvas.getContext("2d"),
+	phys_timer = null,
+	started = !1,
+	pos = 
+	{
+		x: w / 2,
+		y: h / 2
+	},
+	o = [],
+	b = [],
+	scroll=0,
+	score=0
+	speed=1,
+	vel = 
+	{
+		x: 0,
+		y: 0
+	},
+	chunks_o=[
+		[[1/4,0],
+		[3/4,0],
+		[1/4,-30],
+		[3/4,-30],
+		[1/4,-60],
+		[3/4,-60]],
+
+		[[.5,0],
+		[.5,-30],
+		[.5,-60]],
+
+		[[1/4,0],
+		[.5,0],
+		[3/4,0]]
+	]
+	chunks_b=[
+		[[.5,-30]],
+
+		[],
+
+		[[.5,-30]],
+	];
+
+function ci(x,y,r,o)
+{
+	c.beginPath()
+	c.ellipse(x, y, r, r, .79, 0, 6.28)
+	c.fill()
+
+	c.beginPath()
+	c.ellipse(x, y, r+5, r+5, .79, 0, 6.28)
+	if(o)
+		c.stroke()
+}
+scr_a=(j,m)=>({x:j[0]*w,y:j[1]+m*scroll})
+scr=(j,m)=>({x:j.x,y:j.y+m*scroll})
+
+function draw_loop()
+{
+	c.clearRect(0, 0, w, h)
+	c.lineWidth = 1;
+	c.strokeStyle = c.fillStyle = "white"
+
+	ci(pos.x, pos.y, 10, 1)
+
+	c.strokeStyle = c.fillStyle = "green"
+	for (bo of b) {
+		ci(bo.x, bo.y+scroll, 7)
+	}
+
+	c.font = '30px Arial';
+	c.fillText("● "+score, 20, 40)
+
+	c.lineWidth = 2;
+    c.strokeStyle = '#ff0000';
+
+	for (ob of o) {
+		c.strokeRect(ob.x-5, ob.y-5+scroll, 10, 10)
+	}
+
+	window.requestAnimationFrame(draw_loop)
+}
+
+function end_game()
+{
+	clearInterval(phys_timer)
+	setTimeout(function(){
+		alert("game over")
+	}, 250)
+}
+
+function dist(a,b){
+	return Math.sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y))
+}
+
+function physics_loop()
+{
+	pos.x+=vel.x
+	pos.y+=vel.y
+	vel.x*=0.99
+	vel.y+=0.1
+	ns=scroll+speed+(pos.y<(h/2)?1-pos.y/(h/2):0)
+	if(speed<4)speed+=0.0001
+
+	if (~~(scroll/400)!=~~((ns)/400)) spawn_chunk(0)
+	scroll=ns
+
+	pos.y>h && end_game()
+
+	for(ob of o){dist(scr(ob,1),pos)<20 && end_game()}
+
+	b=b.filter((bo)=>dist(scr(bo,1),pos)>15||(score++&&!1))
+}
+
+
+function spawn_chunk(n)
+{
+	for(i of chunks_o[n]){o.push(scr_a(i,-1))}
+	for(i of chunks_b[n]){b.push(scr_a(i,-1))}
+}
+
+function start_game()
+{
+	phys_timer = setInterval(physics_loop, 20)
+	spawn_chunk(0)
+}
+
+canvas.addEventListener('mousedown', function(e) {
+    var rect = canvas.getBoundingClientRect()
+    vel.x = (event.clientX-rect.left)/w*10-5
+    vel.y=-5*pos.y/h
+    !started && (started = !0, start_game())
+})
+draw_loop();
+</script></html>
