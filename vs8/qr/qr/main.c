@@ -1,5 +1,8 @@
 #include <windows.h>
 
+//#pragma comment(linker,"/merge:.rdata=.data")
+//#pragma comment(linker,"/merge:.text=.data")
+
 #define WINDOW_WIDTH 480
 #define WINDOW_HEIGHT 640
 
@@ -12,16 +15,29 @@
 
 extern int _fltused = 0;
 
-static int pos_x=10;
-static int pos_y=10;
+struct point {int x; int y;};
+
+struct point pos = {WINDOW_WIDTH/2*100,WINDOW_HEIGHT/2*100};
+struct point vel = {0,0};
+
+struct point obstacles[10];
+int obstacles_count = 1;
+
+struct point collectibles[10];
+int collectibles_count = 1;
+
+int scroll=0;
+int score=0;
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+void Update();
 void DrawPixels(HWND hwnd);
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	PWSTR lpCmdLine, int nCmdShow) {
-
+return 0;
 	MSG  msg;
+	struct point o;
 	WNDCLASSW wc = { 0 };
 
 	wc.style = CS_HREDRAW | CS_VREDRAW;
@@ -30,6 +46,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	wc.hbrBackground = GetStockObject(BLACK_BRUSH);
 	wc.lpfnWndProc = WndProc;
 	wc.hCursor = LoadCursor(0, IDC_ARROW);
+
+	o.x=100;
+	o.y=100;
+	obstacles[0] = o;
+
+	o.x=200;
+	o.y=200;
+	collectibles[0] = o;
 
 	RegisterClassW(&wc);
 	CreateWindowW(wc.lpszClassName, L"o",
@@ -51,7 +75,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg,
 	switch (msg) {
     case WM_CREATE: 
 
-        SetTimer(hwnd, 1, 10, NULL); 
+        SetTimer(hwnd, 1, 20, NULL); 
 		break;
 
 	case WM_PAINT:
@@ -60,12 +84,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg,
 		break;
 
     case WM_ERASEBKGND:
-        return (LRESULT)1; // Say we handled it.
+        return 1; // Say we handled it.
  
     case WM_TIMER: 
 
-		pos_x += 1;
+		Update();
 		RedrawWindow(hwnd, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW);
+		break;
+ 
+    case WM_LBUTTONDOWN:
+
+		vel.x = (int)((short)(lParam & 0xFFFF))*1000/WINDOW_WIDTH-500;
+		vel.y = -500;
+		//vel.y = -500*(WINDOW_HEIGHT-pos.y/100)*100/WINDOW_HEIGHT;
+
 		break;
 
 	case WM_DESTROY:
@@ -77,33 +109,106 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg,
 	return DefWindowProcW(hwnd, msg, wParam, lParam);
 }
 
+void Update()
+{
+	pos.x += vel.x;
+	pos.y += vel.y;
+	vel.y += 10;
+	vel.x = vel.x*99/100;
+
+	scroll += 1;
+
+}
+
+int distance_squared(struct point a, struct point b)
+{
+	return (a.x-b.x/100)*(a.x-b.x/100)+(a.y+scroll-b.y/100)*(a.y+scroll-b.y/100);
+}
+
 void DrawPixels(HWND hwnd) {
 
 	PAINTSTRUCT ps;
 	RECT r;
 	int i;
 	HDC hdc;
+    HBRUSH hbrBkGnd;
     HBITMAP hbmMem, hbmOld;
+    char score_text[3];
 
 	GetClientRect(hwnd, &r);
 
-	if (r.bottom == 0) {
+	BeginPaint(hwnd, &ps);
 
-		return;
-	}
+    hdc = CreateCompatibleDC(ps.hdc);
 
-	hdc = BeginPaint(hwnd, &ps);
+	hbmMem = CreateCompatibleBitmap(ps.hdc, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-	for (i = 0; i < 1000; i++) {
+    //
+    // Select the bitmap into the off-screen DC.
+    //
 
-		int x = (i*451613) % r.right;
-		int y = (i*116843) % r.bottom;
-		SetPixel(hdc, x, y, RGB(255, 0, 0));
-	}
+    hbmOld = SelectObject(hdc, hbmMem);
+
+    //
+    // Erase the background.
+    //
+
+    hbrBkGnd = GetStockObject(BLACK_BRUSH);
+    FillRect(hdc, &r, hbrBkGnd);
+    DeleteObject(hbrBkGnd);
 
     SelectObject(hdc, GetStockObject(HOLLOW_BRUSH)); 
-    SelectObject(hdc, GetStockObject(WHITE_PEN)); 
-	Ellipse(hdc, pos_x, pos_y, pos_x+10, pos_y+10);
+
+    SelectObject(hdc, CreatePen(PS_DOT,2,RGB(255,255,255)));
+	Ellipse(hdc, pos.x/100, pos.y/100, pos.x/100+10, pos.y/100+10);
+
+    SelectObject(hdc, CreatePen(PS_DOT,2,RGB(255,0,0)));
+	for (i = 0; i < obstacles_count; i++)
+	{
+		Rectangle(hdc, obstacles[i].x, obstacles[i].y+scroll, obstacles[i].x+10, obstacles[i].y+scroll+10);
+		if (distance_squared(obstacles[i], pos) < 20*20)
+		{
+			PostQuitMessage(0);
+		}
+	}
+
+    SelectObject(hdc, CreatePen(PS_DOT,2,RGB(0,255,0)));
+	for (i = 0; i < collectibles_count; i++)
+	{
+		Ellipse(hdc, collectibles[i].x, collectibles[i].y+scroll, collectibles[i].x+10, collectibles[i].y+scroll+10);
+		if (distance_squared(collectibles[i], pos) < 20*20)
+		{
+			score++;
+			collectibles[i].x = -100;
+		}
+	}
+
+	score_text[0] = score/100%10 + '0';
+	score_text[1] = score/10%10 + '0';
+	score_text[2] = score%10 + '0';
+	
+	SetBkColor(hdc, RGB(0,0,0));
+	SetTextColor(hdc, RGB(0,255,0));
+	TextOutA(hdc, 5,5,score_text,3);
+
+    //
+    // Blt the changes to the screen DC.
+    //
+
+    BitBlt(ps.hdc,
+           0, 0,
+           WINDOW_WIDTH, WINDOW_HEIGHT,
+           hdc,
+           0, 0,
+           SRCCOPY);
+
+    //
+    // Done with off-screen bitmap and DC.
+    //
+
+    SelectObject(hdc, hbmOld);
+    DeleteObject(hbmMem);
+    DeleteDC(hdc);
 
 	EndPaint(hwnd, &ps);
 }
