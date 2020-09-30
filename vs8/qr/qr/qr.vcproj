@@ -139,6 +139,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/CRINKLER"
 				AdditionalDependencies="kernel32.lib user32.lib gdi32.lib $(NOINHERIT)"
 				LinkIncremental="1"
 				GenerateManifest="false"
@@ -150,7 +151,7 @@
 				Driver="0"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				EntryPointSymbol="wWinMain"
+				EntryPointSymbol="WinMain"
 				RandomizedBaseAddress="0"
 				FixedBaseAddress="2"
 				DataExecutionPrevention="0"

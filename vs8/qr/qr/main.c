@@ -33,9 +33,9 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 void Update();
 void DrawPixels(HWND hwnd);
 
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	PWSTR lpCmdLine, int nCmdShow) {
-return 0;
+
 	MSG  msg;
 	struct point o;
 	WNDCLASSW wc = { 0 };
