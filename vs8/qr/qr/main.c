@@ -6,13 +6,6 @@
 #define WINDOW_WIDTH 480
 #define WINDOW_HEIGHT 640
 
-/*int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-	LPSTR lpCmdLine, int nCmdShow)
-{
-	MessageBox(NULL, "Goodbye, cruel world!", "Note", MB_OK);
-	return 0;
-}*/
-
 extern int _fltused = 0;
 
 struct point {int x; int y;};
@@ -20,18 +13,180 @@ struct point {int x; int y;};
 struct point pos = {WINDOW_WIDTH/2*100,WINDOW_HEIGHT/2*100};
 struct point vel = {0,0};
 
-struct point obstacles[10];
-int obstacles_count = 1;
+struct point obstacles[1000];
+int obstacles_count = 0;
 
-struct point collectibles[10];
+struct point collectibles[1000];
 int collectibles_count = 1;
 
 int scroll=0;
 int score=0;
+int dead=0;
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 void Update();
 void DrawPixels(HWND hwnd);
+
+void Die()
+{
+	dead=1;
+	MessageBoxA(NULL, "Game over", "gg", MB_OK);
+	PostQuitMessage(0);
+	ExitProcess(0);
+}
+
+#define FLIP(p) if(flip)(p).x=WINDOW_WIDTH-(p).x
+
+void SpawnChunk()
+{
+	int i, index = (pos.x*5+pos.y*4+obstacles_count+scroll) % 9;
+	int flip = (pos.x+pos.y*3+scroll*5+obstacles_count) % 2;
+	struct point p;
+
+	switch (index)
+	{
+	case 0:
+		p.x = WINDOW_WIDTH/4;
+		p.y = -scroll;
+		obstacles[obstacles_count++] = p;
+		p.x = WINDOW_WIDTH*3/4;
+		p.y = -scroll;
+		obstacles[obstacles_count++] = p;
+		p.x = WINDOW_WIDTH/4;
+		p.y = -scroll-30;
+		obstacles[obstacles_count++] = p;
+		p.x = WINDOW_WIDTH*3/4;
+		p.y = -scroll-30;
+		obstacles[obstacles_count++] = p;
+		p.x = WINDOW_WIDTH/4;
+		p.y = -scroll-60;
+		obstacles[obstacles_count++] = p;
+		p.x = WINDOW_WIDTH*3/4;
+		p.y = -scroll-60;
+		obstacles[obstacles_count++] = p;
+		
+		p.x = WINDOW_WIDTH/2;
+		p.y = -scroll-30;
+		collectibles[collectibles_count++] = p;
+		break;
+
+	case 1:
+		p.x = WINDOW_WIDTH/2;
+		p.y = -scroll;
+		obstacles[obstacles_count++] = p;
+		p.x = WINDOW_WIDTH/2;
+		p.y = -scroll-30;
+		obstacles[obstacles_count++] = p;
+		p.x = WINDOW_WIDTH/2;
+		p.y = -scroll-60;
+		obstacles[obstacles_count++] = p;
+
+		
+		p.x = WINDOW_WIDTH*3/4;
+		p.y = -scroll-30;
+		collectibles[collectibles_count++] = p;
+		p.x = WINDOW_WIDTH/4;
+		p.y = -scroll-30;
+		collectibles[collectibles_count++] = p;
+		break;
+
+	case 2:
+		p.x = WINDOW_WIDTH/4;
+		p.y = -scroll;
+		FLIP(p);
+		obstacles[obstacles_count++] = p;
+		p.x = WINDOW_WIDTH/2;
+		p.y = -scroll;
+		FLIP(p);
+		obstacles[obstacles_count++] = p;
+		p.x = WINDOW_WIDTH*3/4;
+		p.y = -scroll;
+		FLIP(p);
+		obstacles[obstacles_count++] = p;
+		break;
+
+	case 3:
+		for (i=0;i<8;i++)
+		{
+			p.x = WINDOW_WIDTH*(1+i)/10;
+			p.y = -scroll-i*20;
+			obstacles[obstacles_count++] = p;
+		}
+		break;
+
+	case 4:
+		for (i=0;i<6;i++)
+		{
+			p.x = WINDOW_WIDTH*(1+i)/10;
+			p.y = -scroll;
+			FLIP(p);
+			obstacles[obstacles_count++] = p;
+		}
+
+		p.x = WINDOW_WIDTH*4/5;
+		p.y = -scroll;
+		FLIP(p);
+		collectibles[collectibles_count++] = p;
+		break;
+
+	case 5:
+		for (i=0;i<5;i++)
+		{
+			p.x = WINDOW_WIDTH/4;
+			p.y = -scroll-20*i;
+			FLIP(p);
+			obstacles[obstacles_count++] = p;
+		}
+
+		p.x = WINDOW_WIDTH*3/4;
+		p.y = -scroll-50;
+		FLIP(p);
+		collectibles[collectibles_count++] = p;
+		break;
+
+	case 6:
+		for (i=0;i<5;i++)
+		{
+			p.x = WINDOW_WIDTH*(1+i)/6;
+			p.y = -scroll;
+			obstacles[obstacles_count++] = p;
+
+			p.y -= 40;
+			collectibles[collectibles_count++] = p;
+		}
+		break;
+
+	case 7:
+		for (i=0;i<6;i++)
+		{
+			p.x = WINDOW_WIDTH*(5+i)/15;
+			p.y = -scroll;
+			obstacles[obstacles_count++] = p;
+
+			p.y -= 180;
+			obstacles[obstacles_count++] = p;
+
+			p.y += 100;
+			collectibles[collectibles_count++] = p;
+		}
+		break;
+
+	case 8:
+		for (i=0;i<16;i++)
+		{
+			p.x = WINDOW_WIDTH*(10+i*5)/100;
+			p.y = -scroll - (i%4)*40;
+			FLIP(p);
+			obstacles[obstacles_count++] = p;
+		}
+
+		p.x = WINDOW_WIDTH/2+10;
+		p.y = -scroll-60;
+		FLIP(p);
+		collectibles[collectibles_count++] = p;
+		break;
+	}
+}
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	PWSTR lpCmdLine, int nCmdShow) {
@@ -47,12 +202,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	wc.lpfnWndProc = WndProc;
 	wc.hCursor = LoadCursor(0, IDC_ARROW);
 
-	o.x=100;
-	o.y=100;
-	obstacles[0] = o;
-
-	o.x=200;
-	o.y=200;
+	o.x = WINDOW_WIDTH/2;
+	o.y = 100;
 	collectibles[0] = o;
 
 	RegisterClassW(&wc);
@@ -60,7 +211,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 		100, 100, WINDOW_WIDTH, WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
 
-	while (GetMessage(&msg, NULL, 0, 0)) {
+	while (GetMessage(&msg, NULL, 0, 0) > 0) {
 
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
@@ -103,6 +254,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg,
 	case WM_DESTROY:
 
 		PostQuitMessage(0);
+		ExitProcess(0);
+		pos.x=0;
 		return 0;
 	}
 
@@ -111,13 +264,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg,
 
 void Update()
 {
+	if (dead) return;
+
 	pos.x += vel.x;
 	pos.y += vel.y;
 	vel.y += 10;
 	vel.x = vel.x*99/100;
 
+	if (scroll % 300 == 0) SpawnChunk();
 	scroll += 1;
-
 }
 
 int distance_squared(struct point a, struct point b)
@@ -125,8 +280,8 @@ int distance_squared(struct point a, struct point b)
 	return (a.x-b.x/100)*(a.x-b.x/100)+(a.y+scroll-b.y/100)*(a.y+scroll-b.y/100);
 }
 
-void DrawPixels(HWND hwnd) {
-
+void DrawPixels(HWND hwnd)
+{
 	PAINTSTRUCT ps;
 	RECT r;
 	int i;
@@ -134,6 +289,8 @@ void DrawPixels(HWND hwnd) {
     HBRUSH hbrBkGnd;
     HBITMAP hbmMem, hbmOld;
     char score_text[3];
+
+	if (dead) return;
 
 	GetClientRect(hwnd, &r);
 
@@ -159,36 +316,43 @@ void DrawPixels(HWND hwnd) {
 
     SelectObject(hdc, GetStockObject(HOLLOW_BRUSH)); 
 
-    SelectObject(hdc, CreatePen(PS_DOT,2,RGB(255,255,255)));
-	Ellipse(hdc, pos.x/100, pos.y/100, pos.x/100+10, pos.y/100+10);
+    SelectObject(hdc, CreatePen(PS_DOT,1,RGB(255,255,224)));
+	Ellipse(hdc, pos.x/100, pos.y/100, pos.x/100+12, pos.y/100+12);
 
-    SelectObject(hdc, CreatePen(PS_DOT,2,RGB(255,0,0)));
+    SelectObject(hdc, CreatePen(PS_DOT,2,RGB(255,69,0)));
 	for (i = 0; i < obstacles_count; i++)
 	{
 		Rectangle(hdc, obstacles[i].x, obstacles[i].y+scroll, obstacles[i].x+10, obstacles[i].y+scroll+10);
-		if (distance_squared(obstacles[i], pos) < 20*20)
+		if (distance_squared(obstacles[i], pos) < 13*13)
 		{
-			PostQuitMessage(0);
+			Die();
 		}
 	}
 
-    SelectObject(hdc, CreatePen(PS_DOT,2,RGB(0,255,0)));
+    SelectObject(hdc, GetStockObject(NULL_PEN)); 
+    SelectObject(hdc, GetStockObject(DC_BRUSH));
+    SetDCBrushColor(hdc, RGB(60,179,113));
 	for (i = 0; i < collectibles_count; i++)
 	{
-		Ellipse(hdc, collectibles[i].x, collectibles[i].y+scroll, collectibles[i].x+10, collectibles[i].y+scroll+10);
+		Ellipse(hdc, collectibles[i].x, collectibles[i].y+scroll, collectibles[i].x+12, collectibles[i].y+scroll+12);
 		if (distance_squared(collectibles[i], pos) < 20*20)
 		{
 			score++;
 			collectibles[i].x = -100;
 		}
 	}
+	
+    SetDCBrushColor(hdc, RGB(255,255,224));
+	Ellipse(hdc, pos.x/100+3, pos.y/100+3, pos.x/100+10, pos.y/100+10);
 
 	score_text[0] = score/100%10 + '0';
+	if (score_text[0] == '0') score_text[0]=' ';
 	score_text[1] = score/10%10 + '0';
+	if (score_text[0] == ' ' && score_text[1] == '0') score_text[1]=' ';
 	score_text[2] = score%10 + '0';
 	
 	SetBkColor(hdc, RGB(0,0,0));
-	SetTextColor(hdc, RGB(0,255,0));
+	SetTextColor(hdc, RGB(60,179,113));
 	TextOutA(hdc, 5,5,score_text,3);
 
     //
