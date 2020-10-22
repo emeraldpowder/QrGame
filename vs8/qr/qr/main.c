@@ -20,6 +20,7 @@ struct point collectibles[1000];
 int collectibles_count = 1;
 
 int scroll=0;
+int speed=1000;
 int score=0;
 int dead=0;
 
@@ -41,66 +42,67 @@ void SpawnChunk()
 {
 	int i, index = (pos.x*5+pos.y*4+obstacles_count+scroll) % 9;
 	int flip = (pos.x+pos.y*3+scroll*5+obstacles_count) % 2;
+	int sc = scroll/10;
 	struct point p;
 
 	switch (index)
 	{
 	case 0:
 		p.x = WINDOW_WIDTH/4;
-		p.y = -scroll;
+		p.y = -sc;
 		obstacles[obstacles_count++] = p;
 		p.x = WINDOW_WIDTH*3/4;
-		p.y = -scroll;
+		p.y = -sc;
 		obstacles[obstacles_count++] = p;
 		p.x = WINDOW_WIDTH/4;
-		p.y = -scroll-30;
+		p.y = -sc-30;
 		obstacles[obstacles_count++] = p;
 		p.x = WINDOW_WIDTH*3/4;
-		p.y = -scroll-30;
+		p.y = -sc-30;
 		obstacles[obstacles_count++] = p;
 		p.x = WINDOW_WIDTH/4;
-		p.y = -scroll-60;
+		p.y = -sc-60;
 		obstacles[obstacles_count++] = p;
 		p.x = WINDOW_WIDTH*3/4;
-		p.y = -scroll-60;
+		p.y = -sc-60;
 		obstacles[obstacles_count++] = p;
 		
 		p.x = WINDOW_WIDTH/2;
-		p.y = -scroll-30;
+		p.y = -sc-30;
 		collectibles[collectibles_count++] = p;
 		break;
 
 	case 1:
 		p.x = WINDOW_WIDTH/2;
-		p.y = -scroll;
+		p.y = -sc;
 		obstacles[obstacles_count++] = p;
 		p.x = WINDOW_WIDTH/2;
-		p.y = -scroll-30;
+		p.y = -sc-30;
 		obstacles[obstacles_count++] = p;
 		p.x = WINDOW_WIDTH/2;
-		p.y = -scroll-60;
+		p.y = -sc-60;
 		obstacles[obstacles_count++] = p;
 
 		
 		p.x = WINDOW_WIDTH*3/4;
-		p.y = -scroll-30;
+		p.y = -sc-30;
 		collectibles[collectibles_count++] = p;
 		p.x = WINDOW_WIDTH/4;
-		p.y = -scroll-30;
+		p.y = -sc-30;
 		collectibles[collectibles_count++] = p;
 		break;
 
 	case 2:
 		p.x = WINDOW_WIDTH/4;
-		p.y = -scroll;
+		p.y = -sc;
 		FLIP(p);
 		obstacles[obstacles_count++] = p;
 		p.x = WINDOW_WIDTH/2;
-		p.y = -scroll;
+		p.y = -sc;
 		FLIP(p);
 		obstacles[obstacles_count++] = p;
 		p.x = WINDOW_WIDTH*3/4;
-		p.y = -scroll;
+		p.y = -sc;
 		FLIP(p);
 		obstacles[obstacles_count++] = p;
 		break;
@@ -109,7 +111,7 @@ void SpawnChunk()
 		for (i=0;i<8;i++)
 		{
 			p.x = WINDOW_WIDTH*(1+i)/10;
-			p.y = -scroll-i*20;
+			p.y = -sc-i*20;
 			obstacles[obstacles_count++] = p;
 		}
 		break;
@@ -118,13 +120,13 @@ void SpawnChunk()
 		for (i=0;i<6;i++)
 		{
 			p.x = WINDOW_WIDTH*(1+i)/10;
-			p.y = -scroll;
+			p.y = -sc;
 			FLIP(p);
 			obstacles[obstacles_count++] = p;
 		}
 
 		p.x = WINDOW_WIDTH*4/5;
-		p.y = -scroll;
+		p.y = -sc;
 		FLIP(p);
 		collectibles[collectibles_count++] = p;
 		break;
@@ -133,13 +135,13 @@ void SpawnChunk()
 		for (i=0;i<5;i++)
 		{
 			p.x = WINDOW_WIDTH/4;
-			p.y = -scroll-20*i;
+			p.y = -sc-20*i;
 			FLIP(p);
 			obstacles[obstacles_count++] = p;
 		}
 
 		p.x = WINDOW_WIDTH*3/4;
-		p.y = -scroll-50;
+		p.y = -sc-50;
 		FLIP(p);
 		collectibles[collectibles_count++] = p;
 		break;
@@ -148,7 +150,7 @@ void SpawnChunk()
 		for (i=0;i<5;i++)
 		{
 			p.x = WINDOW_WIDTH*(1+i)/6;
-			p.y = -scroll;
+			p.y = -sc;
 			obstacles[obstacles_count++] = p;
 
 			p.y -= 40;
@@ -160,7 +162,7 @@ void SpawnChunk()
 		for (i=0;i<6;i++)
 		{
 			p.x = WINDOW_WIDTH*(5+i)/15;
-			p.y = -scroll;
+			p.y = -sc;
 			obstacles[obstacles_count++] = p;
 
 			p.y -= 180;
@@ -175,13 +177,13 @@ void SpawnChunk()
 		for (i=0;i<16;i++)
 		{
 			p.x = WINDOW_WIDTH*(10+i*5)/100;
-			p.y = -scroll - (i%4)*40;
+			p.y = -sc - (i%4)*40;
 			FLIP(p);
 			obstacles[obstacles_count++] = p;
 		}
 
 		p.x = WINDOW_WIDTH/2+10;
-		p.y = -scroll-60;
+		p.y = -sc-60;
 		FLIP(p);
 		collectibles[collectibles_count++] = p;
 		break;
@@ -210,6 +212,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	CreateWindowW(wc.lpszClassName, L"o",
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 		100, 100, WINDOW_WIDTH, WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
+
+	SpawnChunk();
 
 	while (GetMessage(&msg, NULL, 0, 0) > 0) {
 
@@ -246,8 +250,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg,
     case WM_LBUTTONDOWN:
 
 		vel.x = (int)((short)(lParam & 0xFFFF))*1000/WINDOW_WIDTH-500;
-		vel.y = -500;
-		//vel.y = -500*(WINDOW_HEIGHT-pos.y/100)*100/WINDOW_HEIGHT;
+		vel.y = -700*(pos.y)/(WINDOW_HEIGHT*100);
 
 		break;
 
@@ -264,20 +267,28 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg,
 
 void Update()
 {
+	int oldScroll;
 	if (dead) return;
 
 	pos.x += vel.x;
+	if(pos.x<0)pos.x=0;
+	if(pos.x>WINDOW_WIDTH*100-1200)pos.x=WINDOW_WIDTH*100-1200;
 	pos.y += vel.y;
 	vel.y += 10;
 	vel.x = vel.x*99/100;
+	if (speed<4000) speed++;
 
-	if (scroll % 300 == 0) SpawnChunk();
-	scroll += 1;
+	oldScroll = scroll;
+	scroll += speed/100;
+	//if(pos.y*100<WINDOW_HEIGHT/2)scroll += 
+	if (scroll / 3000 != oldScroll / 3000) SpawnChunk();
+
+	if (pos.y > WINDOW_HEIGHT*100) Die();
 }
 
 int distance_squared(struct point a, struct point b)
 {
-	return (a.x-b.x/100)*(a.x-b.x/100)+(a.y+scroll-b.y/100)*(a.y+scroll-b.y/100);
+	return (a.x-b.x/100)*(a.x-b.x/100)+(a.y+scroll/10-b.y/100)*(a.y+scroll/10-b.y/100);
 }
 
 void DrawPixels(HWND hwnd)
@@ -322,7 +333,7 @@ void DrawPixels(HWND hwnd)
     SelectObject(hdc, CreatePen(PS_DOT,2,RGB(255,69,0)));
 	for (i = 0; i < obstacles_count; i++)
 	{
-		Rectangle(hdc, obstacles[i].x, obstacles[i].y+scroll, obstacles[i].x+10, obstacles[i].y+scroll+10);
+		Rectangle(hdc, obstacles[i].x, obstacles[i].y+scroll/10, obstacles[i].x+10, obstacles[i].y+scroll/10+10);
 		if (distance_squared(obstacles[i], pos) < 13*13)
 		{
 			Die();
@@ -334,7 +345,7 @@ void DrawPixels(HWND hwnd)
     SetDCBrushColor(hdc, RGB(60,179,113));
 	for (i = 0; i < collectibles_count; i++)
 	{
-		Ellipse(hdc, collectibles[i].x, collectibles[i].y+scroll, collectibles[i].x+12, collectibles[i].y+scroll+12);
+		Ellipse(hdc, collectibles[i].x, collectibles[i].y+scroll/10, collectibles[i].x+12, collectibles[i].y+scroll/10+12);
 		if (distance_squared(collectibles[i], pos) < 20*20)
 		{
 			score++;
