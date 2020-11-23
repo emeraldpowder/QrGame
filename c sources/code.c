@@ -28,13 +28,10 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 void Update();
 void DrawPixels(HWND hwnd);
 
-void Die()
-{
-	dead=1;
-	MessageBoxA(NULL, "Game over", "gg", MB_OK);
-	PostQuitMessage(0);
-	ExitProcess(0);
-}
+
+
+	
+
 
 #define FLIP(p) if(flip)(p).x=WINDOW_WIDTH-(p).x
 
